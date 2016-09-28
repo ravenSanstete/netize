@@ -25,6 +25,7 @@ class HiddenLayer(object):
         self.activate_func=utils.nonlinearity(mode);
     # define the output of this layer
     def out():
+        print('hello');
         pass; # compute the output of this layer
     def variables():
         pass; # return the variables that needs to be initialized in a session
