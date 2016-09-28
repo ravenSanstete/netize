@@ -1,5 +1,6 @@
 # a sigmoid layer component for other modules usage
 import tensorflow as tf
+import numpy as np
 import utils as utils
 class HiddenLayer(object):
     """a two level neural structure, basic use as a component for more complicated structure
