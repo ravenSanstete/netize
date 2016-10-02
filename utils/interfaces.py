@@ -10,8 +10,8 @@ nonlinearity_dict={
 noise_dict={
     'gaussian':noise_maker.gaussian_noise,
     'mask':noise_maker.mask_noise,
-    'sault':sault_and_pepper,
-    'none':none_noise
+    'sault':noise_maker.sault_and_pepper,
+    'none':noise_maker.none_noise
 }
 
 # basically for hidden layer
