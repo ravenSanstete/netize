@@ -30,11 +30,11 @@ reconstruct_err_mode={
 
 
 # 選択は不要なことだ。
-# 終了です「
+# 終了です
 class DenoisingAE(object):
     """docstring for DenoisingAE.
         ::param input_layer  "access for other modules"
-        ::param structure shape (3,1) [n_in, n_hidden, n_out] s.t. n_in==n_out
+        ::param structure shape (2,1) [n_in, n_hidden, n_out] s.t. n_in==n_out
         ::param err_mode string "the metric of reconstruction error"
         ::param noise_mode string  "the kind of prior noise"
         ::param sample_num scalar 
@@ -57,15 +57,22 @@ class DenoisingAE(object):
         # 実例化いろいろきほんなこと
         self.input_layer=input_layer; #　to restore the original input_layer value, for the calculation of the reconstruction error
         self.components.append(weaver.HiddenLayer(utils.noise(self.noise_mode)(input_layer),self.sample_num,structure[0],structure[1],_name=self.name+'_encoder'));
-        self.components.append(weaver.HiddenLayer(self.components[0].out(),self.sample_num,structure[1],structure[2],_name=self.name+'_decoder'));
+        # add tied weight 
+        
+        self.components.append(weaver.HiddenLayer(self.code_out(),self.sample_num,structure[1],structure[0],W=tf.transpose(self.components[0].W),_name=self.name+'_decoder'));
         # おしまい
     # to define the output of the network
+    def code_out(self):
+        return self.components[0].out(); #simply the  でりぐち of the second ネット
     def out(self):
-        return self.components[1].out(); #simply the  でりぐち of the second ネット
+        return self.components[1].out();
     # use such simple naming 、将来のために
     def loss(self):
         return reconstruct_err_mode[self.err_mode](self.input_layer,self.out(),_name=self.name+'_reconstruction_error');
-
+    # return the variables of this model
+    def variables(self):
+        return [self.components[0].b,self.components[0].W,self.components[1].b]; # only includes all the non-repeated variables
+        
 
 
 

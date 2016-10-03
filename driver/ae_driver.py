@@ -30,8 +30,8 @@ flags.DEFINE_float('epsilon',0.0000001,'bound for precision');
 data=np.random.randn(FLAGS.sample_num,FLAGS.in_dim); 
 
 packed_data=tf.placeholder(dtype=tf.float32,shape=[FLAGS.sample_num,FLAGS.in_dim],name='input_layer');
-# 必要なことしか設定じゃ無い。
-ae_net=autoencoder.DenoisingAE(packed_data,FLAGS.sample_num,[FLAGS.in_dim,FLAGS.encode_dim,FLAGS.in_dim]);
+# 必要なことしか設定じゃ無い
+ae_net=autoencoder.DenoisingAE(packed_data,FLAGS.sample_num,[FLAGS.in_dim,FLAGS.encode_dim]);
 
 
 # define the initiation op
