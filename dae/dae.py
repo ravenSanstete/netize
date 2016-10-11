@@ -9,9 +9,10 @@ class DeepAutoEncoder(object):
     ::param sample_num "the input data numbers"
     ::param shape "the whole structure parameters"
     """
-    
+
     def __init__(self, input_layer, sample_num ,shape):
         self.shape=shape; # shape as [input, hidden_1, hidden_2, hidden_3, ...,output]
+        self.sigmoid_layers=[];
         self.da_layers=[];
         self.hidden_layer_size=len(shape)-2;
 
@@ -34,9 +35,9 @@ class DeepAutoEncoder(object):
         for i in range(self.hidden_layer_size):
             var_list.extend(self.da_layers[i].variables());
         return var_list;
-            
-    
-        
+
+
+
 
 
 
