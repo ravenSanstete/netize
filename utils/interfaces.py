@@ -1,5 +1,11 @@
 import tensorflow as tf;
-import noise_maker
+
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+
+import utils.noise_maker as noise_maker
 
 # dictionary for different usages
 nonlinearity_dict={

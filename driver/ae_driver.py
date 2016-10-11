@@ -3,9 +3,13 @@
 import numpy as np
 import tensorflow as tf
 
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
 
 import ae.denoising as autoencoder
-
+import feeder.toy_random as feeder
 # driver for this autoencoder only uses random embedding matrix
 # which is also of some kind of importance for future research
 
@@ -25,13 +29,16 @@ flags.DEFINE_integer('rating',0.05,'the learning rating');
 flags.DEFINE_integer('log_step',500,'steps for logging reconstruction error');
 
 flags.DEFINE_float('epsilon',0.0000001,'bound for precision');
+
+flags.DEFINE_integer('batch_size',100,'batch size');
 # no evaluating part, since this is not evaluable
 # no need to use mini-batch
-data=np.random.randn(FLAGS.sample_num,FLAGS.in_dim); 
+feeder.initialize(FLAGS.sample_num,FLAGS.in_dim);
 
-packed_data=tf.placeholder(dtype=tf.float32,shape=[FLAGS.sample_num,FLAGS.in_dim],name='input_layer');
+
+packed_data=tf.placeholder(dtype=tf.float32,shape=[FLAGS.batch_size,FLAGS.in_dim],name='input_layer');
 # 必要なことしか設定じゃ無い
-ae_net=autoencoder.DenoisingAE(packed_data,FLAGS.sample_num,[FLAGS.in_dim,FLAGS.encode_dim]);
+ae_net=autoencoder.DenoisingAE(packed_data,FLAGS.batch_size,[FLAGS.in_dim,FLAGS.encode_dim]);
 
 
 # define the initiation op
@@ -56,15 +63,15 @@ sess.run(init_op);
 
 average_loss=0.0;
 
-# define the feed dict
-feed_dict={
-    packed_data:data
-};
+
 
 old_loss=50000000.0;
 average_loss=0.0;
 min_loss=-1.0;
 for i in range(FLAGS.max_iter):
+    feed_dict={
+        packed_data:feeder.gen_batch(FLAGS.batch_size)
+    }
     _,loss_val=sess.run([train_op,loss],feed_dict=feed_dict);
     average_loss+=loss_val;
     if(i%FLAGS.log_step==0):
