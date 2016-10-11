@@ -1,6 +1,6 @@
 # to implement a denoising deep autoencoder with common usage
 # pretrain procedure should not be implemented in this file
-# since dae is just a structure without any idea of where it will be applied 
+# since dae is just a structure without any idea of where it will be applied
 import numpy as np
 import tensorflow as tf
 
@@ -23,7 +23,7 @@ class DeepAutoEncoder(object):
         self.shape=shape; # shape as [input, hidden_1, hidden_2, hidden_3, ...,output]
         self.sigmoid_layers=[];
         self.da_layers=[];
-        self.hidden_layer_size=len(shape)-2;
+        self.hidden_layer_size=len(shape)-1;
 
         # should only initialize ae layers here and after training , store the ae parameters
         # for mlp's usage
@@ -54,8 +54,8 @@ class DeepAutoEncoder(object):
             var_list.extend(self.da_layers[i].variables());
         return var_list;
 
-            
-        
+
+
 
 
 
