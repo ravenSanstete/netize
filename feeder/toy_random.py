@@ -3,11 +3,11 @@ import numpy as np
 
 data=[];
 
-# once initialize, enough 
-def initialize(sample_num,dim):
+# once initialize, enough
+def initialize(sample_num=1000,dim=10):
     global data;
     data=np.random.randn(sample_num,dim);
-    return; 
-    
+    return;
+
 def gen_batch(batch_size,rpl=True):
     return data[np.random.choice(data.shape[0],batch_size,rpl),:];
