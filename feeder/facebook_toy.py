@@ -11,6 +11,11 @@ u_size=4039; # id from 0 - 4038
 current_dir=os.path.dirname(os.path.abspath(__file__));
 train_path=os.path.join(current_dir,train_name);
 test_path=os.path.join(current_dir,test_name);
+train_adj_graph=list();
+test_adj_graph=list();
+for i in range(u_size):
+    train_adj_graph.append(list());
+    test_adj_graph.append(list());
 
 
 
@@ -21,6 +26,11 @@ def initialize():
     global test_set
     train_set=np.load(train_path);
     test_set=np.load(test_path);
+    # to construct the adj graph of the test set
+    for i in range(train_set.shape[0]):
+        train_adj_graph[train_set[i][0]].append(train_set[i][1]);
+    for i in range(test_set.shape[0]):
+        test_adj_graph[test_set[i][0]].append(test_set[i][1]);
     return;
 
 
@@ -45,8 +55,12 @@ def gen_batch(batch_size,neg_ratio=0.5):
     # random perm batch to get randomization benefits
     return batch[np.random.permutation(batch_size),:];
 
+# return the precision of the link prediction model
+# a standare criterion for this problem
+def precision(w_mat,L):
+    pass;
 
-#　simple test for the correctness of this feeder 
+#　simple test for the correctness of this feeder
 if  __name__=='__main__':
     initialize();
     print(gen_batch(batch_size=100));
