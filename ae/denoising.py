@@ -41,7 +41,8 @@ class DenoisingAE(object):
         ::param structure shape (2,1) [n_in, n_hidden, n_out] s.t. n_in==n_out
         ::param err_mode string "the metric of reconstruction error"
         ::param noise_mode string  "the kind of prior noise"
-        ::param sample_num scalar 
+        ::param sample_num scalar
+        ::param variables list [b_0,W,b_1]
         [Note: the reason for introducing the input_layer dimension into the structure shape is because that
         It's more convenient to use it directly, it's a quite common-use constant.
         ]
@@ -50,7 +51,7 @@ class DenoisingAE(object):
     # first let all the nonlinearity component to be of the form sigmoid, which makes it a little bit clearer
 
     # may need to add some options structure to spectify the noise parameter, いま、やらないでいい。
-    def __init__(self, input_layer,sample_num, structure, err_mode='gaussian', noise_mode='gaussian',name="denoising_ae"):
+    def __init__(self, input_layer,sample_num, structure,variables=None, err_mode='gaussian', noise_mode='gaussian',name="denoising_ae"):
         # do basic assignment
         self.components=[];
         self.name=name;
@@ -60,10 +61,17 @@ class DenoisingAE(object):
         self.err_mode=err_mode;
         # 実例化いろいろきほんなこと
         self.input_layer=input_layer; #　to restore the original input_layer value, for the calculation of the reconstruction error
-        self.components.append(weaver.HiddenLayer(utils.noise(self.noise_mode)(input_layer),self.sample_num,structure[0],structure[1],_name=self.name+'_encoder'));
-        # add tied weight 
-        
-        self.components.append(weaver.HiddenLayer(self.code_out(),self.sample_num,structure[1],structure[0],W=tf.transpose(self.components[0].W),_name=self.name+'_decoder'));
+
+        if(variables==None):
+            # if there is no preset variables ,just init them normally
+            self.components.append(weaver.HiddenLayer(utils.noise(self.noise_mode)(input_layer),self.sample_num,structure[0],structure[1],_name=self.name+'_encoder'));
+            # add tied weight
+            self.components.append(weaver.HiddenLayer(self.code_out(),self.sample_num,structure[1],structure[0],W=tf.transpose(self.components[0].W),_name=self.name+'_decoder'));
+        else:
+            # if there is no preset variables ,just init them normally
+            self.components.append(weaver.HiddenLayer(utils.noise(self.noise_mode)(input_layer),self.sample_num,structure[0],structure[1],W=variables[1],b=variables[0],_name=self.name+'_encoder'));
+            # add tied weight
+            self.components.append(weaver.HiddenLayer(self.code_out(),self.sample_num,structure[1],structure[0],W=tf.transpose(self.components[0].W),b=variables[2],_name=self.name+'_decoder'));
         # おしまい
     # to define the output of the network
     def code_out(self):
@@ -76,7 +84,7 @@ class DenoisingAE(object):
     # return the variables of this model
     def variables(self):
         return [self.components[0].b,self.components[0].W,self.components[1].b]; # only includes all the non-repeated variables
-        
+
 
 
 

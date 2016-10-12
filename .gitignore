@@ -1,0 +1,4 @@
+*.pyc
+*.rd
+feeder/*
+!feeder/*.py

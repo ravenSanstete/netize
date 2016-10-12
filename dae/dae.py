@@ -19,7 +19,7 @@ class DeepAutoEncoder(object):
     ::param shape "the whole structure parameters"
     """
 
-    def __init__(self, input_layer, sample_num ,shape):
+    def __init__(self, input_layer, sample_num ,shape,variables=None):
         self.shape=shape; # shape as [input, hidden_1, hidden_2, hidden_3, ...,output]
         self.sigmoid_layers=[];
         self.da_layers=[];
@@ -29,12 +29,16 @@ class DeepAutoEncoder(object):
         # for mlp's usage
         current_input=input_layer;
         for i in range(self.hidden_layer_size):
-             ae_layer=denoising.DenoisingAE(current_input,sample_num,[self.shape[i],self.shape[i+1]]);
-             # constrain the sigmoid layer weight matrix the same as the denoising structure
-             # in a more general word, they are sharing the same structure
-             sig_layer=hidden.HiddenLayer(current_input,sample_num,self.shape[i],self.shape[i+1],W=(ae_layer.variables()[1]));
-             self.da_layers.append(ae_layer);
-             current_input=ae_layer.code_out();
+            # constrain the sigmoid layer weight matrix the same as the denoising structure
+            # in a more general word, they are sharing the same structure
+            if(variables==None):
+                ae_layer=denoising.DenoisingAE(current_input,sample_num,[self.shape[i],self.shape[i+1]]);
+            else:
+                ae_layer=denoising.DenoisingAE(current_input,sample_num,[self.shape[i],self.shape[i+1]],variables=variables[3*i:3*(i+1)]);
+            sig_layer=hidden.HiddenLayer(current_input,sample_num,self.shape[i],self.shape[i+1],W=(ae_layer.variables()[1]));
+            self.da_layers.append(ae_layer);
+            self.sigmoid_layers.append(sig_layer);
+            current_input=ae_layer.code_out();
     # construct the loss functions
     # actually returns a loss list composed with the reconstruction losses of all the autoencoder layers
     def loss(self):
@@ -46,7 +50,7 @@ class DeepAutoEncoder(object):
     def out(self):
         out_list=[];
         for i in range(self.hidden_layer_size):
-            out_list.append(self.sig_layer.out());
+            out_list.append(self.sigmoid_layers[i].out());
         return out_list;
     def variables(self):
         var_list=[];
