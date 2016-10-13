@@ -52,7 +52,7 @@ flags.DEFINE_float('epsilon',0.0001,'bound for precision');
 
 flags.DEFINE_integer('batch_size',512,'batch size');
 
-flags.DEFINE_integer('L',1000,'the base number for evaluating');
+flags.DEFINE_integer('L',100,'the base number for evaluating');
 # no evaluating part, since this is not evaluable
 # no need to use mini-batch
 
@@ -205,7 +205,6 @@ for i in range(FLAGS.max_iter):
 
 pred_mat=sess.run([evaluate_op],feed_dict={});
 
-print(pred_mat);
 print("Precision: %f" % feeder.precision(pred_mat,FLAGS.L));
 
 

@@ -61,21 +61,21 @@ def gen_batch(batch_size,neg_ratio=0.5):
 # a standare criterion for this problem
 def precision(w_mat,L):
     # normalize w_mat matrix
-    w_mat-=np.triu(w_mat);
-    flat_w=np.flatten(w_mat);
-    sorted_indices=np.arg_sort(flat_w);
+    w_mat-=np.tril(w_mat);
+    flat_w=np.ndarray.flatten(w_mat);
+    sorted_indices=np.argsort(flat_w);
     top_L=sorted_indices[-L:];
     # convert the indices in a tuple way
     top_l_pos=np.zeros((L,2),dtype=np.int32);
     # there is a need to store the temporary position info
     for i in range(L):
-        top_l_pos[i,0]=top_L[i]/w_mat.shape[0];
-        top_l_pos[i,1]=top_L[i]-top_l_pos[i,0];
-    # since the matrix is normalized into a lower triangle matrix, it's certainly that the row index is bigger than the column index 
+        top_l_pos[i,0]=top_L[i]/u_size;
+        top_l_pos[i,1]=top_L[i]-top_l_pos[i,0]*u_size;
+    # since the matrix is normalized into a lower triangle matrix, it's certainly that the row index is bigger than the column index
     print(top_l_pos);
     hit=0;
     for i in range(L):
-        if (top_l_pos[i,1] in test_adj_graph[tol_l_pos[i,0]]):
+        if (top_l_pos[i,1] in test_adj_graph[top_l_pos[i,0]]):
             hit+=1;
     return hit/L;
 
