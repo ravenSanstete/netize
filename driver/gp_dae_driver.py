@@ -206,5 +206,7 @@ for i in range(FLAGS.max_iter):
 pred_mat=sess.run([evaluate_op],feed_dict={});
 
 print(pred_mat);
+print("Precision: %f" % feeder.precision(pred_mat,FLAGS.L));
+
 
 #
