@@ -2,4 +2,3 @@
 *.rd
 feeder/*
 !feeder/*.py
-!feeder/facebook/facebook.*
