@@ -38,10 +38,12 @@ def initialize():
 #　neg_ratio: param : the ratio of faked negative samples in a batch
 #  only implement a simple mechanism here
 #　 in future, it may be more complicated, or use an auxiliary net to do it
+
+# to mark the negative examples as -1, thus may use the cross entropy
 def gen_batch(batch_size,neg_ratio=0.5):
     fake_size=int(neg_ratio*batch_size);
     truth_size=batch_size-fake_size;
-    fake_set=np.zeros((fake_size,3),dtype=np.int32);
+    fake_set=-np.ones((fake_size,3),dtype=np.int32);
     # first set the fake data in the batch
     fake_set[:,0]=np.random.choice(u_size,fake_size);
     fake_set[:,1]=np.random.choice(u_size,fake_size);
@@ -58,6 +60,12 @@ def gen_batch(batch_size,neg_ratio=0.5):
 # return the precision of the link prediction model
 # a standare criterion for this problem
 def precision(w_mat,L):
+    # set the diagonal to be zeros
+    w_mat-=np.tril(w_mat);
+    flat_w=np.flatten(w_mat);
+    sorted_indices=np.arg_sort(flat_w);
+    top_L=sorted_indices[-L:];
+    # convert the indices in a tuple way
     pass;
 
 #　simple test for the correctness of this feeder

@@ -48,7 +48,7 @@ flags.DEFINE_integer('m_size',1,'number of machine generating the instances');
 
 flags.DEFINE_float('tolerance',0.00001,'argument for pretraining');
 
-flags.DEFINE_float('epsilon',0.000001,'bound for precision');
+flags.DEFINE_float('epsilon',0.0001,'bound for precision');
 
 flags.DEFINE_integer('batch_size',512,'batch size');
 
@@ -106,7 +106,8 @@ pred=prediction(u_a_embed_list,u_b_embed_list); # pred should of [1]
 
 
 
-ce_loss=tf.reduce_mean(tf.pow(pred-y_,2));
+sqr_loss=tf.reduce_mean(tf.pow(pred-y_,2));
+ce_loss=tf.reduce_mean(-y_*tf.log(pred));
 
 # to return the L-precision
 def evaluate():
