@@ -46,13 +46,13 @@ flags.DEFINE_integer('u_size',feeder.u_size,'instance number');
 flags.DEFINE_integer('m_size',1,'number of machine generating the instances');
 
 
-flags.DEFINE_float('tolerance',0.00001,'argument for pretraining');
+flags.DEFINE_float('tolerance',0.0001,'argument for pretraining');
 
-flags.DEFINE_float('epsilon',0.0001,'bound for precision');
+flags.DEFINE_float('epsilon',0.00001,'bound for precision');
 
 flags.DEFINE_integer('batch_size',512,'batch size');
 
-flags.DEFINE_integer('L',100,'the base number for evaluating');
+flags.DEFINE_integer('L',5000,'the base number for evaluating');
 # no evaluating part, since this is not evaluable
 # no need to use mini-batch
 
@@ -61,7 +61,7 @@ flags.DEFINE_integer('L',100,'the base number for evaluating');
 
 feeder.initialize();
 
-dae_shape=[FLAGS.in_dim,15,30,15,10];
+dae_shape=[FLAGS.in_dim,40,10];
 
 u_a=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_u_a');
 u_b=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_u_b');
@@ -143,7 +143,7 @@ for i in range(dae_net_a.hidden_layer_size):
 
 
 # should never train the embedding matrix
-train_supervised=optimizer.minimize(ce_loss,var_list=total_var_list);
+train_supervised=optimizer.minimize(sqr_loss,var_list=total_var_list);
 
 sess=tf.Session();
 
@@ -189,11 +189,15 @@ for i in range(FLAGS.max_iter):
         u_b:packed_data[:,1],
         y_:packed_data[:,2]
     };
-    _,loss_val=sess.run([train_supervised,ce_loss],feed_dict=feed_dict);
+    _,loss_val=sess.run([train_supervised,sqr_loss],feed_dict=feed_dict);
     average_loss+=loss_val;
     if(i%FLAGS.log_step==0):
         average_loss=average_loss/FLAGS.log_step;
         print("Step %d Average Loss %.8f" %(i,average_loss));
+        pred_mat=sess.run([evaluate_op],feed_dict={});
+        print(pred_mat);
+        train_hit,test_hit=feeder.precision(pred_mat,FLAGS.L);
+        print("Precision: %f,%f" % (train_hit,test_hit));
         if(np.abs(old_loss-average_loss)<=FLAGS.tolerance):
             print("Final Loss %.8f" %(average_loss));
             break; # go training the next level
@@ -204,8 +208,9 @@ for i in range(FLAGS.max_iter):
 
 
 pred_mat=sess.run([evaluate_op],feed_dict={});
-
-print("Precision: %f" % feeder.precision(pred_mat,FLAGS.L));
+print(pred_mat);
+train_hit,test_hit=feeder.precision(pred_mat,FLAGS.L);
+print("Precision: %f,%f" % (train_hit,test_hit));
 
 
 #
