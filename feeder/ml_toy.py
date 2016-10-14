@@ -1,21 +1,67 @@
 # a feeder for the movie lens 100k data set
-
+# to implement the feeder for each 
 import zipfile
+import os
 import numpy as np
-PATH='ml-100k.zip';
-FILE_NAME='ml-100k/u.data';
+
+PATH='ml-1m.zip';
+train_path='ml-1m/train.dat';
+test_path='ml-1m/test.dat'
+zip_name='ml-1m.zip';
+
+
+# add some configuration dict
+# format str:list[zip_fname,train_fname,test_fname,u_size,i_size,delim]
+config={
+    '1m': {
+        'zip_name':'movie_lens/ml-1m.zip',
+        'train_name': 'ml-1m/train.dat',
+        'test_name': 'ml-1m/test.dat',
+        'u_size': 6040,
+        'i_size': 3952,
+        'delim':'::'
+     },
+   '100k':{
+        'zip_name':'movie_lens/ml-100k.zip',
+        'train_name': 'ml-100k/ua.base',
+        'test_name': 'ml-100k/ua.test',
+        'u_size': 943,
+        'i_size': 1682,
+        'delim': '\t'
+     }
+}
+
+
+current_dir=os.path.dirname(os.path.abspath(__file__));
+
+
+
+
+
+
+train_set=[];
+test_set=[];
+
+
+
+# version could be '1m', '100k', '10m'
+def initialize(version='1m'):
+    global train_set;
+    global test_set;
+    train_set=read_data(config[version]['zip_name'],config[version]['train_name'],config[version]['delim']);
+    test_set=read_data(config[version]['zip_name'],config[version]['test_name'],config[version]['delim']);
+    pass;
 
 
 # unzipped the file and then read in the u.data
-def read_data(path=PATH,file_name=FILE_NAME):
+def read_data(zip_path,filename,delimiter):
     print('unzip dataset');
-    with zipfile.ZipFile(path) as ml100k_zip:
-        with ml100k_zip.open(file_name) as ml100k:
-            line=ml100k.read().decode('utf-8');
-            raw=line.replace('\n','\t').split('\t');
-    return raw[:-1];
+    with zipfile.ZipFile(path) as ml_zip:
+        with ml_zip.open(file_name) as ml:
+            line=ml.read().decode('utf-8');
+            raw=line.replace(delimiter,'\t').replace('\n','\t').split('\t');
+    return raw;
 
-# raw=read_data();
 
 
      
@@ -38,7 +84,8 @@ def build_dataset(raw,modu=4):
 
 # 
 # data=build_dataset(raw);  
-
+# 
+# print(data.shape);
     
     
 
@@ -47,7 +94,9 @@ def gen_batch(data,batch_size):
     data_size=data.shape[0];
     composed_batch=data[np.random.choice(data_size,batch_size),:];
     return composed_batch;
-
+    
+    
+# to generated an ordered batch according to the data set seq    
 def gen_order_batch(data,beg,batch_size):
     data_size=data.shape[0];
     composed_batch=data[beg:beg+batch_size,:];
@@ -61,6 +110,7 @@ def gen_order_batch(data,beg,batch_size):
         batch_label[count]=field[2];
         count+=1;
     return batch_uid,batch_iid,batch_label;
+    
 
 def gen_split_batch(data,batch_size):
     data_size=data.shape[0];
