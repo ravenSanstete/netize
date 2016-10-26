@@ -1,5 +1,7 @@
 # a rating prediction oriented deep autoencoder driver
+# adding individual probability to control the inner product process
 
+#
 import  numpy as np
 import tensorflow as tf
 
@@ -74,8 +76,9 @@ _high=6.0/(FLAGS.in_dim);
 u_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim)),dtype=tf.float32,name='u_vec_matrix');
 v_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim)),dtype=tf.float32,name='v_vec_matrix');
 
-
-
+#
+u_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim-1)),dtype=tf.float32,name='u_prob_matrix');
+v_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim-1)),dtype=tf.float32,name='v_prob_matrix');
 # look up embeds according to the
 u_embed=tf.nn.embedding_lookup(u_vec_matrix,u,name='batch_u_embedding');
 v_embed=tf.nn.embedding_lookup(v_vec_matrix,v,name='batch_v_embedding');
