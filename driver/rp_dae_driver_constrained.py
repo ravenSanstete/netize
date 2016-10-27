@@ -79,9 +79,27 @@ v_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_siz
 #
 u_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim-1)),dtype=tf.float32,name='u_prob_matrix');
 v_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim-1)),dtype=tf.float32,name='v_prob_matrix');
+
+
+# extend the raw probability matrix to the complete one
+def compute_prob_mat(raw_mat):
+    pass;
+    
+u_prob_matrix=compute_prob_mat(u_prob_matrix);
+v_prob_matrix=compute_prob_mat(v_prob_matrix);
+
+    
+
+
 # look up embeds according to the
 u_embed=tf.nn.embedding_lookup(u_vec_matrix,u,name='batch_u_embedding');
 v_embed=tf.nn.embedding_lookup(v_vec_matrix,v,name='batch_v_embedding');
+
+
+u_prob_embed=tf.nn.embedding_lookup(u_prob_matrix,u,name='batch_u_probs');
+v_prob_embed=tf.nn.embedding_lookup(v_prob_matrix,v,name='batch_v_probs');
+
+
 
 
 # the following nets should be pretrained respectively
