@@ -1,7 +1,5 @@
 # a rating prediction oriented deep autoencoder driver
-# adding individual probability to control the inner product process
 
-#
 import  numpy as np
 import tensorflow as tf
 
@@ -50,7 +48,7 @@ flags.DEFINE_integer('delta',2,'for eval');
 flags.DEFINE_integer('m_u_size',1,'number of machine generating user instances');
 flags.DEFINE_integer('m_v_size',1,'number of machine generating item instances');
 
-flags.DEFINE_float('tolerance',0.0001,'argument for pretraining');
+flags.DEFINE_float('tolerance',0.001,'argument for pretraining');
 
 flags.DEFINE_float('epsilon',0.00001,'bound for precision');
 
@@ -61,9 +59,13 @@ flags.DEFINE_integer('batch_size',512,'batch size');
 # no need to use mini-batch
 
 
+# each use corresponding to a tiny encoder machine
+
+pre_train_open=True;
+
+dae_shape=[FLAGS.in_dim,10,5];
 
 
-dae_shape=[FLAGS.in_dim,40,10];
 
 u=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_u_id');
 v=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_v_id');
@@ -72,34 +74,25 @@ y_=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.float32,name='batch_label');
 
 _low=-6.0/(FLAGS.in_dim);
 _high=6.0/(FLAGS.in_dim);
+
+
+# generating machine embedding tables,shape
+# here is a dae machine factory
+def machine_ebt(num,shape):
+    embed_tables=list();
+    for i in range()
+
+
+
 #　define the instance random embedding matrix
 u_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim)),dtype=tf.float32,name='u_vec_matrix');
 v_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim)),dtype=tf.float32,name='v_vec_matrix');
 
-#
-u_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim-1)),dtype=tf.float32,name='u_prob_matrix');
-v_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim-1)),dtype=tf.float32,name='v_prob_matrix');
-
-
-# extend the raw probability matrix to the complete one
-def compute_prob_mat(raw_mat):
-    pass;
-    
-u_prob_matrix=compute_prob_mat(u_prob_matrix);
-v_prob_matrix=compute_prob_mat(v_prob_matrix);
-
-    
 
 
 # look up embeds according to the
 u_embed=tf.nn.embedding_lookup(u_vec_matrix,u,name='batch_u_embedding');
 v_embed=tf.nn.embedding_lookup(v_vec_matrix,v,name='batch_v_embedding');
-
-
-u_prob_embed=tf.nn.embedding_lookup(u_prob_matrix,u,name='batch_u_probs');
-v_prob_embed=tf.nn.embedding_lookup(v_prob_matrix,v,name='batch_v_probs');
-
-
 
 
 # the following nets should be pretrained respectively
@@ -205,6 +198,8 @@ sess.run(init_op);
 
 # pretraining procedure, level by level
 for j in range(dae_net_u.hidden_layer_size):
+    if(not pre_train_open):
+        break;
     print("BEGIN LEVEL %d MAP %d -> %d" %(j+1,dae_shape[j],dae_shape[j+1]));
     old_loss=50000000.0;
     average_loss=0.0;
@@ -229,6 +224,8 @@ for j in range(dae_net_u.hidden_layer_size):
 
 # pretraining procedure, level by level
 for j in range(dae_net_v.hidden_layer_size):
+    if(not pre_train_open):
+        break;
     print("BEGIN LEVEL %d MAP %d -> %d" %(j+1,dae_shape[j],dae_shape[j+1]));
     old_loss=50000000.0;
     average_loss=0.0;
@@ -266,7 +263,7 @@ for i in range(FLAGS.max_iter):
         average_loss=average_loss/FLAGS.log_step;
         print("Step %d Average Loss %.8f" %(i,average_loss));
         pred_mat=sess.run([evaluate_op],feed_dict={});
-        print(pred_mat);
+        print([np.var(pred_mat),np.max(pred_mat),np.min(pred_mat)]);
         rmse=feeder.rmse(pred_mat[0]);
         print("RMSE: %f" % (rmse));
         if(np.abs(old_loss-average_loss)<=FLAGS.tolerance):
@@ -279,7 +276,7 @@ for i in range(FLAGS.max_iter):
 
 
 pred_mat=sess.run([evaluate_op],feed_dict={});
-print(pred_mat);
+print([np.var(pred_mat),np.max(pred_mat),np.min(pred_mat)]);
 rmse=feeder.rmse(pred_mat[0]);
 print("RMSE: %f" % (rmse));
 

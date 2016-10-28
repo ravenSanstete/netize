@@ -1,3 +1,4 @@
+
 # a rating prediction oriented deep autoencoder driver
 
 import  numpy as np
@@ -70,9 +71,56 @@ y_=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.float32,name='batch_label');
 
 _low=-6.0/(FLAGS.in_dim);
 _high=6.0/(FLAGS.in_dim);
+
+# generating machine embedding tables,shape
+# here is a dae machine factory
+def machine_ebt(num,shape):
+    embed_tables=list();
+    delta=0.1;
+    for i in range(len(shape-1)):
+        embed_tables.append(tf.Variable(np.zeros([num,shape[i]]))); # b0
+        embed_tables.append(tf.Variable(delta*np.random.randn(num,shape[i],shape[i+1]))); #w01
+        embed_tables.append(tf.Variable(np.zeros(num,shape[i+1])));
+    return embed_tables;
+
+u_machine_tables=np.ndarray([FLAGS.u_size],dtype=np.object);
+v_machine_tables=np.ndarray([FLAGS.i_size],dtype=np.object);
+
+u_paras=machine_ebt(FLAGS.u_size,dae_shape);
+v_paras=machine_ebt(FLAGS.v_size,dae_shape);
+
+
+_low=-6.0/(FLAGS.in_dim);
+_high=6.0/(FLAGS.in_dim);
 #　define the instance random embedding matrix
 u_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim)),dtype=tf.float32,name='u_vec_matrix');
 v_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim)),dtype=tf.float32,name='v_vec_matrix');
+
+
+def construct_table(embed_mat,machine_table,paras):
+    for i in range(len(machine_table)):
+        machine_table[i]=deep_auto_encoder.DeepAutoEncoder(embed_mat[i],1,dae_shape,variables=paras[3*i:3*(i+1)]);
+
+construct_table(u_vec_matrix,u_machine_tables,u_paras);
+construct_table(v_vec_matrix,v_machine_tables,v_paras);
+
+
+
+# run the machines with specific indices and return a list of [batch_size,dim_k]
+# those indices can only be used with embeding look up method
+def eval_machines(indices):
+    pass;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
