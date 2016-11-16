@@ -3,7 +3,9 @@
 import zipfile
 import os,sys,inspect
 import numpy as np
-
+import pymongo
+import json
+import utils as utils
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 
@@ -89,6 +91,7 @@ def build_dataset(raw,modu=4):
     data=np.zeros(shape=(ds_size,modu),dtype=np.int32); # define a custom tensor;
     data_count=0;
     row_count=0;
+
     for field in raw:
         ind=data_count%modu;
         if(ind<2):
@@ -173,10 +176,27 @@ def rmse(pred_mat):
     return np.sqrt(np.sum(np.power(ind_mat*(pred_mat-ind_mat),2))/test_set.shape[0]);
     pass;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #　simple test for the correctness of this feeder
 if  __name__=='__main__':
     initialize(version='100k');
-    print(gen_batch(batch_size=100));
+    name_list=["uid","vid","rating","timestamp"];
+    utils.igrate_db('ml_100k_test',test_set,name_list);
+    utils.migrate_db('ml_100k_train',train_set,name_list);
+
 
 
 

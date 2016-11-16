@@ -1,5 +1,7 @@
 # a rating prediction oriented deep autoencoder driver
+# adding individual probability to control the inner product process
 
+#
 import  numpy as np
 import tensorflow as tf
 
@@ -27,7 +29,7 @@ feeder.initialize(version='100k');
 flags=tf.app.flags;
 FLAGS=flags.FLAGS;
 
-flags.DEFINE_integer('in_dim',10,'the representation no dimension');
+flags.DEFINE_integer('in_dim',3,'the representation no dimension');
 
 flags.DEFINE_integer('max_iter',5000000,'the max iteration numbers');
 
@@ -42,30 +44,29 @@ flags.DEFINE_integer('v_size',feeder.v_size,'v instance number');
 flags.DEFINE_integer('mean',3,'for eval');
 flags.DEFINE_integer('delta',2,'for eval');
 
+flags.DEFINE_integer('base',20,'a base to split the structure training phase and embedding training phase');
+flags.DEFINE_integer('splitter',15,'a ratio');
+
 
 
 #　only define it ahead, it will not be used until next week or next day maybe
 flags.DEFINE_integer('m_u_size',1,'number of machine generating user instances');
 flags.DEFINE_integer('m_v_size',1,'number of machine generating item instances');
 
-flags.DEFINE_float('tolerance',0.001,'argument for pretraining');
+flags.DEFINE_float('tolerance',0.0001,'argument for pretraining');
 
 flags.DEFINE_float('epsilon',0.00001,'bound for precision');
 
 flags.DEFINE_integer('batch_size',512,'batch size');
 
-
+pre_train_open=True;
 # no evaluating part, since this is not evaluable
 # no need to use mini-batch
 
 
-# each use corresponding to a tiny encoder machine
-
-pre_train_open=True;
-
-dae_shape=[FLAGS.in_dim,10,5];
 
 
+dae_shape=[FLAGS.in_dim,6,10,6,3];
 
 u=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_u_id');
 v=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.int32,name='batch_v_id');
@@ -74,25 +75,41 @@ y_=tf.placeholder(shape=[FLAGS.batch_size],dtype=tf.float32,name='batch_label');
 
 _low=-6.0/(FLAGS.in_dim);
 _high=6.0/(FLAGS.in_dim);
-
-
-# generating machine embedding tables,shape
-# here is a dae machine factory
-def machine_ebt(num,shape):
-    embed_tables=list();
-    for i in range()
-
-
-
 #　define the instance random embedding matrix
 u_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,FLAGS.in_dim)),dtype=tf.float32,name='u_vec_matrix');
 v_vec_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,FLAGS.in_dim)),dtype=tf.float32,name='v_vec_matrix');
+
+#
+u_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.u_size,len(dae_shape)-2)),dtype=tf.float32,name='u_prob_matrix');
+v_prob_matrix=tf.Variable(np.random.uniform(low=_low,high=_high,size=(FLAGS.v_size,len(dae_shape)-2)),dtype=tf.float32,name='v_prob_matrix');
+
+# expand vector into a matrix
+def E(vec):
+    return tf.expand_dims(vec,dim=1);
+
+# extend the raw probability matrix to the complete one
+# to generate the probability matrix implicitly from the raw matrix
+def gen_prob_mat(raw):
+    raw_shape=raw.get_shape().as_list();
+    out_mat=tf.exp(tf.concat(1,[raw,tf.zeros(shape=[raw_shape[0],1],dtype=tf.float32)]));
+    sum_mat=tf.matmul(tf.expand_dims(tf.reduce_sum(out_mat,1),1),tf.ones([1,raw_shape[1]+1],dtype=tf.float32));
+    return tf.div(out_mat,sum_mat);
+
+u_prob_mat=gen_prob_mat(u_prob_matrix);
+v_prob_mat=gen_prob_mat(v_prob_matrix);
+
 
 
 
 # look up embeds according to the
 u_embed=tf.nn.embedding_lookup(u_vec_matrix,u,name='batch_u_embedding');
 v_embed=tf.nn.embedding_lookup(v_vec_matrix,v,name='batch_v_embedding');
+
+
+u_prob_list=tf.nn.embedding_lookup(u_prob_mat,u,name='batch_u_probs'); # of size [batch_size, layer_num]
+v_prob_list=tf.nn.embedding_lookup(v_prob_mat,v,name='batch_v_probs'); # of size  [batch_size,layer_num]
+
+
 
 
 # the following nets should be pretrained respectively
@@ -114,6 +131,11 @@ dae_net_v_eval=deep_auto_encoder.DeepAutoEncoder(v_vec_matrix,FLAGS.v_size,dae_s
 # get two matrix of embeddings from the dae_nets
 u_embed_list=dae_net_u.out(); # each level of (batch_size,d_k);
 v_embed_list=dae_net_v.out();
+
+
+def gen_normalize_weight(a_prob_list,b_prob_list):
+    return tf.reduce_sum(a_prob_list*b_prob_list);
+
 def cosine_sim(a_embed,b_embed):
     a_normalized=tf.nn.l2_normalize(a_embed,dim=1);
     b_normalized=tf.nn.l2_normalize(b_embed,dim=1); # normalize along the each vector
@@ -125,15 +147,16 @@ def _eval(cos_sim,mean,delta):
 def dot_eval(a_embed,b_embed):
     return tf.diag_part(tf.matmul(a_embed,b_embed,transpose_b=True));
 # currently just use all level embedding to predict, in future, it should become a stochastic process
-def prediction(a_embed_list,b_embed_list):
+def prediction(a_embed_list,b_embed_list,a_prob_list,b_prob_list):
     pred=tf.zeros([FLAGS.batch_size],dtype=np.float32);
     for i in range(dae_net_u.hidden_layer_size):
-        pred+=_eval(cosine_sim(a_embed_list[i],b_embed_list[i]),FLAGS.mean,FLAGS.delta);
-    return pred/dae_net_u.hidden_layer_size;
+        pred+=a_prob_list[:,i]*b_prob_list[:,i]*cosine_sim(a_embed_list[i],b_embed_list[i]);
+    pred=_eval(pred/gen_normalize_weight(a_prob_list,b_prob_list),FLAGS.mean,FLAGS.delta);
+    return pred;
 
 
 
-pred=prediction(u_embed_list,v_embed_list); # pred should of [1]
+pred=prediction(u_embed_list,v_embed_list,u_prob_list,v_prob_list); # pred should of [1]
 
 
 
@@ -146,12 +169,14 @@ def evaluate():
     # to maintain a max-L list
     u_embed_list=dae_net_u_eval.out();
     v_embed_list=dae_net_v_eval.out();
+    # use u_prob_list, and v prob_list as the total matrix
     pred_mat=tf.zeros([FLAGS.u_size,FLAGS.v_size],dtype=np.float32);
     for i in range(dae_net_u.hidden_layer_size):
         u_normalized=tf.nn.l2_normalize(u_embed_list[i],dim=1);
         v_normalized=tf.nn.l2_normalize(v_embed_list[i],dim=1); # normalize along the each vector
-        pred_mat+=_eval(tf.matmul(u_normalized,v_normalized,transpose_b=True),FLAGS.mean,FLAGS.delta);
-    return pred_mat/dae_net_u.hidden_layer_size;
+        pred_mat+=tf.matmul(E(u_prob_mat[:,i]),E(v_prob_mat[:,i]),transpose_b=True)*tf.matmul(u_normalized,v_normalized,transpose_b=True);
+    pred_mat=_eval(pred_mat/tf.matmul(u_prob_mat,v_prob_mat,transpose_b=True),FLAGS.mean,FLAGS.delta);
+    return pred_mat;
 
 
 evaluate_op=evaluate();
@@ -186,6 +211,8 @@ for i in range(dae_net_v.hidden_layer_size):
 train_supervised=optimizer.minimize(sqr_loss,var_list=u_var_list.extend(v_var_list));
 
 
+train_structure=optimizer.minimize(sqr_loss,var_list=[u_prob_matrix,v_prob_matrix]);
+
 
 sess=tf.Session();
 
@@ -199,6 +226,7 @@ sess.run(init_op);
 # pretraining procedure, level by level
 for j in range(dae_net_u.hidden_layer_size):
     if(not pre_train_open):
+        print("Pretrain closed");
         break;
     print("BEGIN LEVEL %d MAP %d -> %d" %(j+1,dae_shape[j],dae_shape[j+1]));
     old_loss=50000000.0;
@@ -225,6 +253,7 @@ for j in range(dae_net_u.hidden_layer_size):
 # pretraining procedure, level by level
 for j in range(dae_net_v.hidden_layer_size):
     if(not pre_train_open):
+        print("Pretrain closed");
         break;
     print("BEGIN LEVEL %d MAP %d -> %d" %(j+1,dae_shape[j],dae_shape[j+1]));
     old_loss=50000000.0;
@@ -257,13 +286,16 @@ for i in range(FLAGS.max_iter):
         v:packed_data[:,1],
         y_:packed_data[:,2]
     };
-    _,loss_val=sess.run([train_supervised,sqr_loss],feed_dict=feed_dict);
+    if(np.mod(i,FLAGS.base)<FLAGS.splitter):
+        _,loss_val=sess.run([train_supervised,sqr_loss],feed_dict=feed_dict);
+    else:
+        _,loss_val=sess.run([train_structure,sqr_loss],feed_dict=feed_dict);
     average_loss+=loss_val;
     if(i%FLAGS.log_step==0):
         average_loss=average_loss/FLAGS.log_step;
         print("Step %d Average Loss %.8f" %(i,average_loss));
         pred_mat=sess.run([evaluate_op],feed_dict={});
-        print([np.var(pred_mat),np.max(pred_mat),np.min(pred_mat)]);
+        print(pred_mat);
         rmse=feeder.rmse(pred_mat[0]);
         print("RMSE: %f" % (rmse));
         if(np.abs(old_loss-average_loss)<=FLAGS.tolerance):
@@ -276,7 +308,7 @@ for i in range(FLAGS.max_iter):
 
 
 pred_mat=sess.run([evaluate_op],feed_dict={});
-print([np.var(pred_mat),np.max(pred_mat),np.min(pred_mat)]);
+print(pred_mat);
 rmse=feeder.rmse(pred_mat[0]);
 print("RMSE: %f" % (rmse));
 
